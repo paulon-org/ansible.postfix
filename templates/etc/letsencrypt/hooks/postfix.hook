@@ -1,0 +1,3 @@
+{{ ansible_managed | comment }}
+setfacl -R -m user:postfix:r-x /etc/letsencrypt/
+systemctl restart postfix

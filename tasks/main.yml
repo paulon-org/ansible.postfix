@@ -1,0 +1,24 @@
+- name: Install postfix
+  ansible.builtin.apt:
+    name: postfix
+
+- name: Deploy postfix configuration
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+  with_items:
+    etc/postfix/main.cf
+
+- name: Deploy postfix postgresql configuration
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/{{ item }}"
+  with_items:
+    - etc/postfix/pgsql-aliases.cf
+    - etc/postfix/pgsql-boxes.cf
+
+
+- name: Deploy letsencrypt hook
+  ansible.builtin.template:
+    src: etc/letsencrypt/hook/postfix.hook
+    dest: /etc/letsencrypt/hook/postfix.hook

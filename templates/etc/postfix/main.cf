@@ -1,0 +1,92 @@
+{{ ansible_managed | comment }}
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+# Debian specific:  Specifying a file name will cause the first
+# line of that file to be used as the name.  The Debian default
+# is /etc/mailname.
+#myorigin = /etc/mailname
+
+smtpd_banner = $myhostname ESMTP $mail_name (Debian/GNU)
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# See http://www.postfix.org/COMPATIBILITY_README.html -- default to 2 on
+# fresh installs.
+compatibility_level = 2
+
+smtp_use_tls=yes
+smtp_tls_security_level = encrypt
+smtp_tls_note_starttls_offer = yes
+smtp_tls_loglevel = 2
+
+
+smtpd_use_tls=yes
+smtpd_tls_security_level = encrypt
+smtpd_tls_auth_only = yes
+smtpd_tls_cert_file=/etc/letsencrypt/live/{{ postfix.certname }}/fullchain.pem
+smtpd_tls_key_file=/etc/letsencrypt/live/{{ postfix.certname }}/privkey.pem
+smtpd_tls_session_cache_timeout = 3600s
+smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_tls_cache
+smtpd_tls_loglevel = 2
+smtpd_tls_received_header = yes
+
+tls_random_source = dev:/dev/urandom
+
+# With this configuration many tls infos are logged and TLS versions and cyphers used can be checked with
+# sudo grep "TLS connection established" /var/log/mail.log | sed 's/.*: //g' | sort | uniq -c | sort -rn
+
+
+# Allow only "recent" cyphers (thanks Orange ...)
+smtp_tls_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
+smtp_tls_mandatory_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
+smtp_tls_ciphers = high
+smtp_tls_mandatory_ciphers = high
+smtp_tls_exclude_ciphers = MD5, DES, ADH, RC4, PSD, SRP, 3DES, eNULL, aNULL
+smtp_tls_mandatory_exclude_ciphers = MD5, DES, ADH, RC4, PSD, SRP, 3DES, eNULL, aNULL
+
+smtpd_tls_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
+smtpd_tls_mandatory_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
+smtpd_tls_ciphers = high
+smtpd_tls_mandatory_ciphers = high
+smtpd_tls_exclude_ciphers = MD5, DES, ADH, RC4, PSD, SRP, 3DES, eNULL, aNULL
+smtpd_tls_mandatory_exclude_ciphers = MD5, DES, ADH, RC4, PSD, SRP, 3DES, eNULL, aNULL
+
+tls_preempt_cipherlist = yes
+tls_ssl_options = NO_RENEGOTIATION
+
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+
+{% if postfix.auth_type == "dovecot" %}
+# Dovecot auth
+smtpd_sasl_type=dovecot
+smtpd_sasl_path=private/auth
+smtpd_sasl_auth_enable=yes
+{% endif %}
+
+smtpd_recipient_restrictions = permit_sasl_authenticated permit_mynetworks reject_unauth_destination
+smtpd_client_restrictions    = permit_sasl_authenticated permit_mynetworks reject_unauth_destination
+smtpd_relay_restrictions     = permit_sasl_authenticated permit_mynetworks defer_unauth_destination
+
+myhostname = {{ postfix.hostname }}
+alias_maps = hash:/etc/aliases {% if postfix.psql is defined %}proxy:pgsql:/etc/postfix/pgsql-aliases.cf{% endif %}
+local_recipient_maps = {% if postfix.psql is defined %}proxy:pgsql:/etc/postfix/pgsql-boxes.cf{% endif %} $alias_maps
+myorigin = /etc/mailname
+mydestination = $myhostname, localhost, localhost.localdomain, {{ ", ".join(postfix.destinations) }}
+relayhost = 
+relay_domains = 
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+inet_protocols = all
+
+{% if postfix.mailbox_transport == "dovecot" %}
+mailbox_transport = lmtp:unix:private/dovecot-lmtp
+{% endif %}

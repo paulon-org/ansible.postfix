@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+user = {{ postfix.psql.user }}
+dbname = {{ postfix.psql.db }}
+query = {{ postfix.psql.boxes_query }}
+hosts = {{ " ".join(postfix.psql.hosts) }}
