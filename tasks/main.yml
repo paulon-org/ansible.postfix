@@ -25,5 +25,5 @@
 
 - name: Deploy letsencrypt hook
   ansible.builtin.template:
-    src: etc/letsencrypt/hook/postfix.hook
-    dest: /etc/letsencrypt/hook/postfix.hook
+    src: etc/letsencrypt/hooks/postfix.hook
+    dest: /etc/letsencrypt/hooks/postfix.hook
