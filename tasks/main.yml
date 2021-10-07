@@ -2,6 +2,11 @@
   ansible.builtin.apt:
     name: postfix
 
+- name: Install postfix-pgsql
+  ansible.builtin.apt:
+    name: postfix-pgsql
+  when: postfix.psql is defined
+
 - name: Deploy postfix configuration
   ansible.builtin.template:
     src: "{{ item }}"
@@ -16,7 +21,7 @@
   with_items:
     - etc/postfix/pgsql-aliases.cf
     - etc/postfix/pgsql-boxes.cf
-
+  when: postfix.psql is defined
 
 - name: Deploy letsencrypt hook
   ansible.builtin.template:
