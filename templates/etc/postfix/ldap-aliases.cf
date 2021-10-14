@@ -1,4 +1,4 @@
-server_host = {{ postfix.ldap.server }}
+server_host = {{ postfix.ldap.host }}
 search_base = {{ postfix.ldap.base }}
 query_filter = {{ postfix.ldap.aliases_query }}
 result_attribute = {{ postfix.ldap.aliases_result }}
