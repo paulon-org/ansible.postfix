@@ -43,7 +43,7 @@ tls_random_source = dev:/dev/urandom
 # sudo grep "TLS connection established" /var/log/mail.log | sed 's/.*: //g' | sort | uniq -c | sort -rn
 
 
-# Allow only "recent" cyphers (thanks Orange ...)
+# Allow only "recent" protocols (thanks Orange ...)
 smtp_tls_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
 smtp_tls_mandatory_protocols = TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, !SSLv2, !SSLv3
 smtp_tls_ciphers = high
@@ -75,13 +75,34 @@ smtpd_client_restrictions    = permit_sasl_authenticated permit_mynetworks rejec
 smtpd_relay_restrictions     = permit_sasl_authenticated permit_mynetworks defer_unauth_destination
 
 myhostname = {{ postfix.hostname }}
-alias_maps = hash:/etc/aliases {% if postfix.psql is defined %}proxy:pgsql:/etc/postfix/pgsql-aliases.cf{% endif %}
-local_recipient_maps = {% if postfix.psql is defined %}proxy:pgsql:/etc/postfix/pgsql-boxes.cf{% endif %} $alias_maps
+
+alias_maps = 
+    hash:/etc/aliases 
+{% if postfix.psql is defined %}
+    proxy:pgsql:/etc/postfix/pgsql-aliases.cf
+{% endif %}
+{% if postfix.ldap is defined %}
+    proxy:ldap:/etc/postfix/ldap-aliases.cf
+{% endif %}
+
+local_recipient_maps = 
+{% if postfix.psql is defined %}
+    proxy:pgsql:/etc/postfix/pgsql-boxes.cf
+{% endif %}
+{% if postfix.ldap is defined %}
+    proxy:ldap:/etc/postfix/ldap-boxes.cf
+{% endif %}
+    $alias_maps
+
 myorigin = /etc/mailname
 mydestination = $myhostname, localhost, localhost.localdomain, {{ ", ".join(postfix.destinations) }}
 relayhost = 
 relay_domains = 
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mynetworks = 
+    127.0.0.0/8 
+    [::ffff:127.0.0.0]/104 
+    [::1]/128
+
 mailbox_size_limit = 0
 recipient_delimiter = +
 inet_interfaces = all

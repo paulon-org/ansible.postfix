@@ -10,6 +10,13 @@
         hostname: mail.example.com
         destinations:
           - example.com
+        ldap:
+          host: "ldapi:///"
+          base: "ou=passwd,dc=example,dc=com"
+          boxes_query: mail=%s
+          boxes_result: mail
+          aliases_query: otherMailbox=%s
+          aliases_result: mail
         psql:
           user: mail
           db: mail
